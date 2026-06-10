@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 
+# todo: Make it such that the login page and home page are the same
+# if user is authenticated, show home page with map, else, show login form
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('', auth_views.LoginView.as_view(template_name='home.html'), name='home'),
     path("accounts/", include("django.contrib.auth.urls")),
 ]
