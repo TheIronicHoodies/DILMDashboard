@@ -2,12 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.urls import reverse 
-from django.apps import AppConfig
 
 # Create your models here.
-class AccountsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'accounts'
 
 class CustomUser(AbstractUser):
     fullname = models.CharField(max_length=99)
