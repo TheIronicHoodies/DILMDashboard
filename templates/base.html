@@ -1,0 +1,22 @@
+<html>
+    <head>
+        {% load static %}
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{% block title %}Title{% endblock %}</title>
+        {% block styles %}{% endblock %}
+        <link rel="stylesheet" type="text/css" href=" {% static 'style.css' %} ">
+    </head>
+    <body>
+        <header>
+            <h1>Dapat Isa Lang Movement Progress Dashboard</h1> 
+        </header>
+        {% block content %}
+        {% endblock %}
+        <footer>
+            <section>
+                Contact us!
+            </section>
+        </footer>
+    </body>
+</html>

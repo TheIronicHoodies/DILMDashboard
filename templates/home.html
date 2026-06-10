@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+
+<main id = "home-page">
+    {% if user.is_authenticated %}
+    {% block content %}
+    {% endblock %}
+    {% endif%}
+</main>
