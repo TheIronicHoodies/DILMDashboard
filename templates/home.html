@@ -2,11 +2,17 @@
 {% load static %}
 
 {% block title %}Home{% endblock %}
-
+{% block header %}{{map.header.render|safe}}{% endblock %}
 
 <main id = "home-page">
     {% if user.is_authenticated %}
     {% block content %}
+    <div class="map">
+        {{map.html.render|safe}}
+        <script>
+            {{map.script.render|safe}}
+        </script>
+    </div>
     {% endblock %}
     {% else %}
     <div class="login-card">
