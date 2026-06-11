@@ -15,8 +15,8 @@ class MapView(TemplateView):
             width="50%", # width of the map
             height="50%", # height of the map
             zoom_start=12, # the starting zoom
-            tiles="OpenStreetMap", # desired tile for the map respresentation
-            zoom_control=True # controls for zoom level (True by default)
+            tiles="Cartodb Positron", # desired tile for the map respresentation
+            zoom_control=False # controls for zoom level (True by default)
         )
         
         ph_map.add_to(figure)
