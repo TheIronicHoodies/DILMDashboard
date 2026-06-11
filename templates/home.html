@@ -4,16 +4,16 @@
 {% block title %}Home{% endblock %}
 {% block header %}{{map.header.render|safe}}{% endblock %}
 
-<main id = "home-page">
+{% block content %}
+<main id="home-page">
     {% if user.is_authenticated %}
-    {% block content %}
+    <div class="map-toggles"></div>
     <div class="map">
         {{map.html.render|safe}}
         <script>
             {{map.script.render|safe}}
         </script>
     </div>
-    {% endblock %}
     {% else %}
     <div class="login-card">
         {% if form.errors %}
@@ -44,3 +44,4 @@
     </div>
     {% endif%}
 </main>
+{% endblock %}

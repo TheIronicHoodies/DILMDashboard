@@ -6,17 +6,9 @@
 
 body {
     background-color: white;
+    height: 100vh;
     margin: 0;
     padding: 5vh;
-}
-
-footer {
-    border-top: 1px solid black;
-    bottom: 0;
-    display: flex;
-    flex-direction: row;
-    padding: 5vh;
-    width: 100vw;
 }
 
 form button {
@@ -37,4 +29,24 @@ form div .helptext {
 }
 form div input {
     width: 25vh;
+}
+
+.map {
+    border: 1px solid black;
+    flex: 1;
+}
+
+.map-toggles {
+    border: 1px solid black;
+    flex: 1;
+}
+
+#home-page {
+    align-items: stretch;
+    display: flex;
+    flex-basis: auto;
+    flex-direction: row;
+    gap: 1em;
+    height: 100%;
+    justify-content: stretch;
 }
