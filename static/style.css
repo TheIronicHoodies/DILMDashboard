@@ -36,6 +36,11 @@ form div input {
     flex: 1;
 }
 
+.map > div {
+    height: 100%;
+    width: 100%;
+}
+
 .map-toggles {
     border: 1px solid black;
     flex: 1;
