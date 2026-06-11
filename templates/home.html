@@ -10,10 +10,10 @@
     <div class="map-toggles"></div>
     <div class="map">
         {{map.html.render|safe}}
-        <script>
-            {{map.script.render|safe}}
-        </script>
     </div>
+    <script>
+        {{map.script.render|safe}}
+    </script>
     {% else %}
     <div class="login-card">
         {% if form.errors %}

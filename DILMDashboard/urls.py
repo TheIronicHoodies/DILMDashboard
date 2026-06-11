@@ -22,6 +22,6 @@ from django.contrib.auth import views as auth_views
 # if user is authenticated, show home page with map, else, show login form
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', auth_views.LoginView.as_view(template_name='home.html'), name='home'),
+    path('', include('map_display.urls')),
     path("accounts/", include("django.contrib.auth.urls")),
 ]
