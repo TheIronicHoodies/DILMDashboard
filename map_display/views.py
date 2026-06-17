@@ -32,6 +32,7 @@ class MapView(TemplateView):
             height="100%", # height of the map
             zoom_start=6, # the starting zoom
             tiles=None, # desired tile for the map respresentation
+            max_bounds=True, # whether to set max bounds to the map (False by default)
             max_zoom = 15,
             min_zoom = 5,
             zoom_control=False # controls for zoom level (True by default)
@@ -44,6 +45,7 @@ class MapView(TemplateView):
             line_weight=1,
         ).add_to(ph_map)
         
+        ph_map.fit_bounds(ph_map.get_bounds())
         ph_map.add_to(figure)
 
         # folium.GeoJson(PH_BOUNDS, name='philippines').add_to(ph_map)
