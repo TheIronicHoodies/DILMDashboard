@@ -24,23 +24,12 @@
 
         <form method="POST">
             {% csrf_token %}
-
-            <div class="inputs">
-                <label for="id_username">Username</label>
-                {{ form.username }}
-            </div>
-
-            <div class="inputs">
-                <label for="id_password">Password</label>
-                {{ form.password }}
-            </div>
-
+            {{ form.as_p }}
             <button type="submit" class="login-btn">Login</button>
+            <a href="{% url 'password_reset' %}" class="forgot-link">
+                Forgot password?
+            </a>
         </form>
-
-        <a href="{% url 'password_reset' %}" class="forgot-link">
-            Forgot password?
-        </a>
     </div>
     {% endif%}
 </main>

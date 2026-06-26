@@ -6,11 +6,11 @@ from django.urls import reverse
 # Create your models here.
 
 class CustomUser(AbstractUser):
-    fullname = models.CharField(max_length=99)
-    nickname = models.CharField(max_length=20)
+    name = models.CharField(max_length=99)
+    email = models.EmailField(unique=True)
 
     def __str__(self):
-        return self.fullname
+        return f"{self.name}"
     
     # def get_absolute_url(self):
     #     return reverse("profile-view", args=[self.username])
