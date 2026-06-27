@@ -22,10 +22,10 @@
             </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit" class="login-btn">Login</button>
+            <button type="submit" value="submit" class="login-btn">Login</button>
             <a href="{% url 'password_reset' %}" class="forgot-link">
                 Forgot password?
             </a>

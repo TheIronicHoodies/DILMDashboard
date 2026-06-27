@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_management',
+    'accounts',
+    'map_display'
 ]
 
 MIDDLEWARE = [
@@ -111,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Singapore'
+TIME_ZONE = 'Asia/Manila'
 
 USE_I18N = True
 
@@ -127,7 +129,7 @@ STATICFILES_DIRS = [
 STATIC_URL = 'static/'
 
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/registration/login/' 
+LOGOUT_REDIRECT_URL = '/' 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Default primary key field type
