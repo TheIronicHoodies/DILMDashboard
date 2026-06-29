@@ -6,6 +6,7 @@
 
 {% block content %}
 <main id="home-page">
+    {% if user.is_authenticated %}
     <div class="map-toggles"></div>
     <div class="map">
         {{map.html.render|safe}}
@@ -13,5 +14,34 @@
     <script>
         {{map.script.render|safe}}
     </script>
+    {% else %}
+    <div class="login-card">
+        {% if form.errors %}
+            <div class="error-box">
+                Invalid username or password.
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="inputs">
+                <label for="id_username">Username</label>
+                {{ form.username }}
+            </div>
+
+            <div class="inputs">
+                <label for="id_password">Password</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+
+        <a href="{% url 'password_reset' %}" class="forgot-link">
+            Forgot password?
+        </a>
+    </div>
+    {% endif%}
 </main>
 {% endblock %}
