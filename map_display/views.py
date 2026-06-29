@@ -1,16 +1,9 @@
 from django.views.generic import TemplateView
 import folium
 import json
-import plotly
-import plotly.express
 import os
 import requests
 
-<<<<<<< HEAD
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-=======
->>>>>>> parent of e8cc460 (cleaned data & .csv)
 # Create your views here.
 class MapView(TemplateView):
     template_name = 'home.html'
