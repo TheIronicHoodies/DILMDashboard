@@ -3,7 +3,11 @@ from django.views.generic import TemplateView
 import folium
 import json
 import os
+import pandas
 import requests
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Create your views here.
 class MapView(TemplateView):
@@ -11,13 +15,15 @@ class MapView(TemplateView):
 
     def get_context_data(self, **kwargs):
         def get_map(json_data_path):
-            with open(json_data_path) as f:
+            absolute_path = os.path.join(BASE_DIR, json_data_path)
+            with open(absolute_path) as f:
                 return json.load(f)
-            
+
         COORDINATES = [12.8797, 121.7740] # Coordinates to the centre of the Philippines
         PH_BOUNDS = [[3,115],[25,135]]
-        PH_COASTLINE = get_map("static/map_coordinates/legis_dists.json")
+        PH_COASTLINE = get_map(os.path.join("static", "map_coordinates", "legis_dists.json"))
 
+        data = pandas.read_csv(os.path.join(BASE_DIR, "static", "map_coordinates", "districts_numbers.csv"))
         figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
         
         ph_map = folium.Map(
@@ -36,13 +42,29 @@ class MapView(TemplateView):
             zoom_control=False # controls for zoom level (True by default)
         )
 
+        features = PH_COASTLINE.get("features", [])
+        if not features:
+            raise ValueError("The GeoJSON file does not contain any features.")
+
+        missing_property = any(
+            not (feature.get("properties") or {}).get("legis_dist")
+            for feature in features
+        )
+        if missing_property:
+            raise ValueError(
+                "Each GeoJSON feature must include 'properties.legis_dist' for Choropleth mapping."
+            )
+
         folium.Choropleth(
             geo_data=PH_COASTLINE,
-            fill_color="#0000ff",
+            data=data,
+            columns=['legis_dist', 'collected_signatures'],
+            key_on='feature.properties.legis_dist',
+            fill_color="PiYG",
             fill_opacity=0.5,
             line_opacity=0,
             line_weight=0,
-            nan_fill_color="white",
+            nan_fill_color="black",
             nan_fill_opacity=1,
         ).add_to(ph_map)
         
