@@ -1,9 +1,7 @@
-from django.shortcuts import render
 from django.views.generic import TemplateView
 import folium
 import json
-import os
-import requests
+import plotly
 
 # Create your views here.
 class MapView(TemplateView):
@@ -19,36 +17,38 @@ class MapView(TemplateView):
         # PH_BOUNDS = {}
         PH_BOUNDS = get_map("static/map_coordinates/legis_dists.json")
         # PATH = "static/map_coordinates/"
+
+        ph_map = exp.
     
         # for file in os.scandir(PATH):
         #     if file.is_file() and file.name.endswith('.json'):
         #         data=get_map(file)
         #         PH_BOUNDS = {**PH_BOUNDS, **data}
 
-        figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
-        ph_map = folium.Map(
-            COORDINATES,
-            width="100%", # width of the map
-            height="100%", # height of the map
-            zoom_start=6, # the starting zoom
-            tiles=None, # desired tile for the map respresentation
-            max_zoom = 15,
-            min_zoom = 5,
-            zoom_control=False # controls for zoom level (True by default)
-        )
+        # figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
+        # ph_map = folium.Map(
+        #     COORDINATES,
+        #     width="100%", # width of the map
+        #     height="100%", # height of the map
+        #     zoom_start=6, # the starting zoom
+        #     tiles=None, # desired tile for the map respresentation
+        #     max_zoom = 15,
+        #     min_zoom = 5,
+        #     zoom_control=False # controls for zoom level (True by default)
+        # )
 
-        folium.Choropleth(
-            geo_data=PH_BOUNDS,
-            fill_opacity=0.5,
-            line_opacity=1,
-            line_weight=1,
-        ).add_to(ph_map)
+        # folium.Choropleth(
+        #     geo_data=PH_BOUNDS,
+        #     fill_opacity=0.5,
+        #     line_opacity=1,
+        #     line_weight=1,
+        # ).add_to(ph_map)
         
-        ph_map.add_to(figure)
+        # ph_map.add_to(figure)
 
-        # folium.GeoJson(PH_BOUNDS, name='philippines').add_to(ph_map)
-        # folium.LayerControl().add_to(ph_map)
+        # # folium.GeoJson(PH_BOUNDS, name='philippines').add_to(ph_map)
+        # # folium.LayerControl().add_to(ph_map)
 
-        figure.render()
-        return {"map": figure}
+        # figure.render()
+        # return {"map": figure}
     
