@@ -109,16 +109,6 @@ class MapView(TemplateView):
             zoom_on_click=True,
         ).add_to(ph_map)
 
-        # folium.Choropleth(
-        #     geo_data=PH_COASTLINE,
-        #     fill_color="#0000ff",
-        #     fill_opacity=0.5,
-        #     line_opacity=0,
-        #     line_weight=0,
-        #     nan_fill_color="white",
-        #     nan_fill_opacity=1,
-        # ).add_to(ph_map)
-
         ph_map.add_to(figure)
         figure.render()
         return {"map": figure}
