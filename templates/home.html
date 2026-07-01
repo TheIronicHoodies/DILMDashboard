@@ -10,32 +10,43 @@
     <div class="map-toggles">
         <form method="post">
             {% csrf_token %}
-            <label for="legis_dist">Select Legislative District:</label>
-            <select id="legis_dist" name="legis_dist" required>
-                <option value="">Select District</option>
-                {% for district in districts %}
-                    <option value="{{ district.legis_dist }}">{{ district.legis_dist }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="collected_signatures">Add collected signatures:</label>
-            <input type="number" id="collected_signatures" name="collected_signatures" value="{{collected_signatures}}">
-
-            <label for="difficulty">Difficulty:</label>
-            <select id="difficulty" name="difficulty" required>
-                <option value="">Select Difficulty</option>
-                <option value="Easy" {% if difficulty == 'Easy' %}selected{% endif %}>Easy</option>
-                <option value="Moderate" {% if difficulty == 'Moderate' %}selected{% endif %}>Moderate</option>
-                <option value="Hard" {% if difficulty == 'Hard' %}selected{% endif %}>Hard</option>
-            </select>
-
-            <label for="partners">Partners:</label>
-            <input type="text" id="partners" name="partners" value="{{partners}}">
-
-            <label for="partner_mobilized">Partner Mobilized:</label>
-            <input type="checkbox" id="partner_mobilized" name="partner_mobilized" {% if partner_mobilized %}checked{% endif %}>
-
-            <button type="submit">Update</button>
+            <div>
+                <div>
+                    <label for="legis_dist">Select Legislative District:</label>
+                    <select id="legis_dist" name="legis_dist" required>
+                        <option value="">Select District</option>
+                        {% for district in districts %}
+                            <option value="{{ district.legis_dist }}">{{ district.legis_dist }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="collected_signatures">Add collected signatures:</label>
+                    <input type="number" id="collected_signatures" name="collected_signatures" value="{{collected_signatures}}">
+                </div>
+                <div>
+                    <label for="difficulty">Difficulty:</label>
+                    <select id="difficulty" name="difficulty" required>
+                        <option value="">Select Difficulty</option>
+                        <option value="Easy" {% if difficulty == 'Easy' %}selected{% endif %}>Easy</option>
+                        <option value="Moderate" {% if difficulty == 'Moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="Hard" {% if difficulty == 'Hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="partners">Partners:</label>
+                    <input type="text" id="partners" name="partners" value="{{partners}}">
+                </div>
+                <div class="checkbox-input">
+                    <label for="partner_mobilized">Partner Mobilized:
+                        <br>
+                        <span class="helptext">*Check this box if at least one partner has mobilized.</span>
+                    </label>
+                    <input type="checkbox" id="partner_mobilized" name="partner_mobilized" {% if partner_mobilized %}checked{% endif %}>
+                </div>
+    
+                <button type="submit">Update</button>
+            </div>
         </form>
     </div>
     <div class="map">
