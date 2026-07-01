@@ -1,7 +1,9 @@
 from branca.colormap import linear
-from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, render
+from django.views.generic import TemplateView, View
 from folium.plugins import StripePattern
+from .models import LegislativeDistrict
 import folium
 import geopandas
 import json
@@ -16,11 +18,8 @@ class MapView(LoginRequiredMixin, TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
-        # def get_map(json_data_path):
-        #     with open(json_data_path) as f:
-        #         return json.load(f)
-        
         def compute_fill_style(feature):
+            '''Computes the fill styles for each district based on the state of the data.'''
             default_style = {
                 "fillColor": '#000000',
                 "fillOpacity": 1.0,
@@ -70,14 +69,43 @@ class MapView(LoginRequiredMixin, TemplateView):
                 default_style['weight'] = 0.5
             
             return default_style
+        
+        def parse_geojson_to_db(geojson):
+            '''Helper function to parse GeoJSON data and update Django's internal database.'''
+            for feature in geojson['features']:
+                properties = feature['properties']
+                legis_dist = properties.get('legis_dist')
+                collected_signatures = properties.get('collected_signatures', 0)
+                difficulty = properties.get('difficulty', 'Medium')
+                partners = properties.get('partners', None)
+                partner_mobilized = properties.get('partner_mobilized', False)
+                registered_voters = properties.get('registered_voters', 0)
+                geometry = feature.get('geometry')
+
+                LegislativeDistrict.objects.update_or_create(
+                    legis_dist=legis_dist,
+                    defaults={
+                        'collected_signatures': collected_signatures,
+                        'difficulty': difficulty,
+                        'partners': partners,
+                        'partner_mobilized': partner_mobilized,
+                        'registered_voters': registered_voters,
+                        'geometry': geometry
+                    }
+                )
+        
         COORDINATES = [12.8797, 121.7740] # Coordinates to the centre of the Philippines
         PH_BOUNDS = [[3,115],[25,135]]
+
+        # Read the GeoJSON and CSV data
         geo_json_data = geopandas.read_file("static/map_coordinates/legis_dists.json")
         csv_data = pandas.read_csv("static/map_coordinates/districts_numbers.csv", dtype={'partners': str})
+        csv_data['partners'] = csv_data['partners'].apply(lambda x: x if pandas.isnull(x) else str(x))
         
         # Merge CSV data with GeoJSON data
         geo_json_data = geo_json_data.merge(csv_data, on="legis_dist", how="left")
 
+        # Filter the columns to keep only the necessary ones for the GeoJSON file
         columns_to_keep = [
             "geometry",
             "legis_dist",
@@ -92,7 +120,11 @@ class MapView(LoginRequiredMixin, TemplateView):
 
         geo_json_data.to_file("static/map_coordinates/legis_dists.geojson", driver="GeoJSON")
 
-        csv_data['partners'] = csv_data['partners'].apply(lambda x: x if pandas.isnull(x) else str(x))
+        # Upload the data to the database if it does not exist yet
+        # This is to ensure all districts exist in the database, but do not
+        # overwrite existing data if it already exists
+        if not LegislativeDistrict.objects.exists():
+            parse_geojson_to_db(json.loads(geo_json_data.to_json()))
 
         figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
         
@@ -162,11 +194,31 @@ class MapUpdateView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
-        district = data.get('legis_dist')
-        collected_signatures = data.get('collected_signatures')
-        difficulty = data.get('difficulty')
-        partners = data.get('partners')
-        partner_mobilized = data.get('partner_mobilized')
-        registered_voters = data.get('registered_voters')
+        district = get_object_or_404(
+            LegislativeDistrict, 
+            legis_dist=data.get('legis_dist')
+        )
+
+        all_districts = LegislativeDistrict.objects.all()
+
+        district.collected_signatures = int(request.POST.get('collected_signatures') or 0) + int(data.get('collected_signatures') or 0)
+        district.difficulty = request.POST.get('difficulty')
+        district.partners = request.POST.get('partners')
+        district.partner_mobilized = request.POST.get('partner_mobilized')
+
+        district.save()
+
+        return render(request, 'home.html', {
+            'districts': all_districts,
+            'legis_dist': district.legis_dist,
+            'collected_signatures': district.collected_signatures,
+            'difficulty': district.difficulty,
+            'partners': district.partners,
+            'partner_mobilized': district.partner_mobilized
+        })
+
+        
+
+
 
         
