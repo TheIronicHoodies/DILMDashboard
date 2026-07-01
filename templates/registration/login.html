@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block header %}Login{% endblock %}
+
+{% block content %}
+    <div class="login-card">
+        {% if form.errors %}
+            <div class="error-box">
+                Invalid username or password.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" value="submit" class="login-btn">Login</button>
+            <a href="{% url 'password_reset' %}" class="forgot-link">
+                Forgot password?
+            </a>
+        </form>
+    </div>
+{% endblock %}
