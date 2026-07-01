@@ -1,5 +1,6 @@
 from branca.colormap import linear
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from folium.plugins import StripePattern
 import folium
 import geopandas
@@ -11,7 +12,7 @@ import requests
 import struct
 
 # Create your views here.
-class MapView(TemplateView):
+class MapView(LoginRequiredMixin, TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
@@ -75,15 +76,21 @@ class MapView(TemplateView):
         csv_data = pandas.read_csv("static/map_coordinates/districts_numbers.csv", dtype={'partners': str})
         
         # Merge CSV data with GeoJSON data
-        geo_json_data = geo_json_data.merge(csv_data, on="legis_dist")
+        geo_json_data = geo_json_data.merge(csv_data, on="legis_dist", how="left")
+
+        columns_to_keep = [
+            "geometry",
+            "legis_dist",
+            "registered_voters",
+            "collected_signatures",
+            "difficulty",
+            "partners",
+            "partner_mobilized",
+        ]
+        columns_to_keep = [col for col in columns_to_keep if col in geo_json_data.columns]
+        geo_json_data = geo_json_data[columns_to_keep]
+
         geo_json_data.to_file("static/map_coordinates/legis_dists.geojson", driver="GeoJSON")
-        
-        # drop unnecessary columns
-        for col in ['date', 'validOn', 'validTo', 'ID_0', 'ISO', 'NAME_0', 'ID_1', 'NAME_1', 'ID_2', 'NAME_2', 'ID_3', 'NAME_3', 'NL_NAME_3',
-                    'ADM0_EN', 'ADM1_EN', 'ADM2_EN', 'ADM3_EN', 'ADM0_PCODE', 'ADM1_PCODE', 'ADM2_PCODE', 'ADM3_PCODE', 'Shape_Leng', 'Shape_Area',
-                    'AREA_SQKM', 'PROVINCE', 'REGION', 'ADM3_REF', 'ADM3ALT1EN', 'ADM3ALT2EN']:
-            if col in geo_json_data.columns:
-                geo_json_data = geo_json_data.drop(col, axis=1)
 
         csv_data['partners'] = csv_data['partners'].apply(lambda x: x if pandas.isnull(x) else str(x))
 
@@ -151,3 +158,7 @@ class MapView(TemplateView):
         figure.render()
         return {"map": figure}
     
+class MapUpdateView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        pass
+    # TODO AFTER LUNCH
