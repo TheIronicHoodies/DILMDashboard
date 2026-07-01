@@ -1,69 +1,90 @@
-import math
-import struct
-
 from branca.colormap import linear
 from django.views.generic import TemplateView
+from folium.plugins import StripePattern
 import folium
+import geopandas
 import json
+import math
 import os
 import pandas
 import requests
+import struct
 
 # Create your views here.
 class MapView(TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
-        def get_map(json_data_path):
-            with open(json_data_path) as f:
-                return json.load(f)
+        # def get_map(json_data_path):
+        #     with open(json_data_path) as f:
+        #         return json.load(f)
         
         def compute_fill_style(feature):
+            default_style = {
+                "fillColor": '#000000',
+                "fillOpacity": 1.0,
+                "fillPattern": None,
+                "weight": 0.0
+            }
             district = feature['properties']['legis_dist']
             district_row = csv_data[csv_data['legis_dist'] == district]
 
             if district_row.empty:
                 print("No data for district:", district)
-                return {"fillColor": '#000000', "fillOpacity": 1.0}
+                return default_style
 
             collected_signatures = district_row['collected_signatures'].iloc[0]
             collected_signatures = int(str(collected_signatures).replace(',', ''))
 
             difficulty = district_row['difficulty'].iloc[0] if 'difficulty' in district_row.columns else 'Medium'
             partners = district_row['partners'].iloc[0] if 'partners' in district_row.columns else None
+            partner_mobilized = district_row['partner_mobilized'].iloc[0] if 'partner_mobilized' in district_row.columns else None
             registered_voters = district_row['registered_voters'].iloc[0]
             registered_voters = int(str(registered_voters).replace(',', ''))
             three_percent = math.ceil(registered_voters * 0.03)
 
             if pandas.isna(partners) or str(partners).strip() == '':
-                return {"fillColor": '#000000', "fillOpacity": 1.0}
+                return default_style
 
-            opacity = min(1.0, max(0.0, collected_signatures / max(three_percent, 1)))
-            color = '#ffcc00'
+            default_style['fillOpacity'] = min(1.0, max(0.0, collected_signatures / max(three_percent, 1)))
             match difficulty:
                 case 'Easy':
-                    color = '#0099ff'
-                case 'Medium':
-                    color = '#ffcc00'
+                    default_style['fillColor'] = blue
+                    if not partner_mobilized:
+                        default_style['fillPattern'] = stripes_blue
                 case 'Hard':
-                    color = '#ff0088'
+                    default_style['fillColor'] = pink
+                    if not partner_mobilized:
+                        default_style['fillPattern'] = stripes_pink
                 case _:
-                    color = '#ffcc00'
+                    default_style['fillColor'] = yellow
+                    if not partner_mobilized:
+                        default_style['fillPattern'] = stripes_yellow
 
-            if opacity == 1.0:
-                border_weight = 1.0
-            elif opacity == 0.0:
-                border_weight = 0.0
+            if default_style['fillOpacity'] == 1.0:
+                default_style['weight'] = 1.0
+            elif default_style['fillOpacity'] == 0.0:
+                default_style['weight'] = 0.0
             else:
-                border_weight = 0.5
-
-            return {"fillColor": color, "fillOpacity": opacity, "weight": border_weight}
+                default_style['weight'] = 0.5
             
+            return default_style
         COORDINATES = [12.8797, 121.7740] # Coordinates to the centre of the Philippines
         PH_BOUNDS = [[3,115],[25,135]]
-        geo_json_data = get_map("static/map_coordinates/legis_dists.json")
-        csv_data = pandas.read_csv("static/map_coordinates/districts_numbers.csv", 
-                                   dtype={'partners': str})
+        geo_json_data = geopandas.read_file("static/map_coordinates/legis_dists.json")
+        csv_data = pandas.read_csv("static/map_coordinates/districts_numbers.csv", dtype={'partners': str})
+        
+        # Merge CSV data with GeoJSON data
+        geo_json_data = geo_json_data.merge(csv_data, on="legis_dist")
+        geo_json_data.to_file("static/map_coordinates/legis_dists.geojson", driver="GeoJSON")
+        
+        # drop unnecessary columns
+        for col in ['date', 'validOn', 'validTo', 'ID_0', 'ISO', 'NAME_0', 'ID_1', 'NAME_1', 'ID_2', 'NAME_2', 'ID_3', 'NAME_3', 'NL_NAME_3',
+                    'ADM0_EN', 'ADM1_EN', 'ADM2_EN', 'ADM3_EN', 'ADM0_PCODE', 'ADM1_PCODE', 'ADM2_PCODE', 'ADM3_PCODE', 'Shape_Leng', 'Shape_Area',
+                    'AREA_SQKM', 'PROVINCE', 'REGION', 'ADM3_REF', 'ADM3ALT1EN', 'ADM3ALT2EN']:
+            if col in geo_json_data.columns:
+                geo_json_data = geo_json_data.drop(col, axis=1)
+
         csv_data['partners'] = csv_data['partners'].apply(lambda x: x if pandas.isnull(x) else str(x))
 
         figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
@@ -85,13 +106,6 @@ class MapView(TemplateView):
             zoom_control=False # controls for zoom level (True by default)
         )
 
-        # colormap = linear.YlGn_09.scale(
-        #     csv_data.collected_signatures.min(),
-        #     csv_data.collected_signatures.max()
-        # )
-
-        # csv_data_dict = csv_data.set_index('legis_dist')['collected_signatures']
-
         # base layer
         folium.features.GeoJson(
             geo_json_data,
@@ -100,13 +114,37 @@ class MapView(TemplateView):
             weight=0,
         ).add_to(ph_map)
 
+        pink = '#ff0088'
+        yellow = '#ffcc00'
+        blue = '#0099ff'
+        stripes_pink = StripePattern(angle=-45, color=pink, opacity=1.0).add_to(ph_map)
+        stripes_yellow = StripePattern(angle=-45, color=yellow, opacity=1.0).add_to(ph_map)
+        stripes_blue = StripePattern(angle=-45, color=blue, opacity=1.0).add_to(ph_map)
+
+        popup = folium.GeoJsonPopup(
+            fields=['legis_dist', 'collected_signatures', 'difficulty', 'partners'],
+            aliases=['Legislative District:', 'Collected Signatures:', 'Difficulty:', 'Partners:'],
+            localize=True,
+            labels=True,
+            lazy=True,
+            style="""
+                background-color: indigo; 
+                border: 1px solid black; 
+                border-radius: 1em; 
+                font-size: 1em;
+                padding: 1em;
+            """,
+        )
+
+
         folium.features.GeoJson(
             geo_json_data,
+            popup=popup,
             style_function=lambda feature: {
                 **compute_fill_style(feature),
                 "weight": 0,
             },
-            zoom_on_click=True,
+            zoom_on_click=False,
         ).add_to(ph_map)
 
         ph_map.add_to(figure)
