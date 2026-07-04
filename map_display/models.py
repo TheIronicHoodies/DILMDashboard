@@ -16,8 +16,8 @@ class LegislativeDistrict(models.Model):
     registered_voters = models.IntegerField()
 
     class Meta:
-        verbose_name = "Legislative District"
-        verbose_name_plural = "Legislative Districts"
+        verbose_name = "legislative_district"
+        verbose_name_plural = "legislative_districts"
     
     def __str__(self):
         return f"{self.legis_dist}"

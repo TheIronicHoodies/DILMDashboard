@@ -8,8 +8,15 @@
 <main id="home-page">
     {% if user.is_authenticated %}
     <div class="map-toggles">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            <label for="legis_dists">Select Legislative District to update:</label>
+            <select name="legis_dists">
+                {% for legislative_district in legislative_districts %}
+                    <option value="{{ legislative_district.legis_dist }}">{{ legislative_district.legis_dist }}</option>
+                {% endfor %}
+            </select>
+
             {{ form.as_p }}
 
             <button type="submit" value="submit">Update</button>

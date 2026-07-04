@@ -2,7 +2,7 @@ from branca.colormap import linear
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, UpdateView
 from folium.plugins import StripePattern
 from .forms import DistrictUpdateForm
 from .models import LegislativeDistrict
@@ -20,6 +20,8 @@ class MapView(LoginRequiredMixin, TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
         def compute_fill_style(feature):
             '''Computes the fill styles for each district based on the state of the data.'''
             default_style = {
@@ -209,37 +211,24 @@ class MapView(LoginRequiredMixin, TemplateView):
 
         ph_map.add_to(figure)
         figure.render()
-        return {"map": figure}
+
+        context['map'] = figure
+        context['form'] = DistrictUpdateForm()
+        context['legislative_districts'] = LegislativeDistrict.objects.all()
+        return context
     
-class MapUpdateView(LoginRequiredMixin, View):
+class MapUpdateView(LoginRequiredMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         form = DistrictUpdateForm()
-
+        print(form.fields + " fields")
         return render(request, 'home.html', {'form': form})
+    
     def post(self, request, *args, **kwargs):
-        form = DistrictUpdateForm(request.POST)
+        district = request.POST.get('legis_dist')
+        form = DistrictUpdateForm(request.POST, instance=LegislativeDistrict.objects.get(legis_dist=district))
         
         if form.is_valid():
             return HttpResponseRedirect('/')
-
-        # all_districts = LegislativeDistrict.objects.all()
-
-        # district = request.POST.get('district')
-        # district.collected_signatures = int(request.POST.get('collected_signatures') or 0) + int(data.get('collected_signatures') or 0)
-        # district.difficulty = request.POST.get('difficulty')
-        # district.partners = request.POST.get('partners')
-        # district.partner_mobilized = request.POST.get('partner_mobilized')
-
-        # district.save()
-
-        # return render(request, 'home.html', {
-        #     'districts': all_districts,
-        #     'legis_dist': district.legis_dist,
-        #     'collected_signatures': district.collected_signatures,
-        #     'difficulty': district.difficulty,
-        #     'partners': district.partners,
-        #     'partner_mobilized': district.partner_mobilized
-        # })
 
         
 
