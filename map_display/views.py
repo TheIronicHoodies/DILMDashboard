@@ -1,8 +1,7 @@
 from branca.colormap import linear
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.views.generic import TemplateView, UpdateView
+from django.views.generic import TemplateView
 from folium.plugins import StripePattern
 from .forms import DistrictUpdateForm
 from .models import LegislativeDistrict
@@ -18,6 +17,26 @@ import struct
 # Create your views here.
 class MapView(LoginRequiredMixin, TemplateView):
     template_name = 'home.html'
+
+    def post(self, request, *args, **kwargs):
+        district = request.POST.get('legis_dist')
+        district_obj = LegislativeDistrict.objects.filter(legis_dist=district).first()
+        context = self.get_context_data()
+
+        if district_obj is None:
+            context['form'] = DistrictUpdateForm(request.POST)
+            return render(request, self.template_name, context)
+
+        form = DistrictUpdateForm(request.POST, instance=district_obj)
+
+        if form.is_valid():
+            form.save()
+            context['form'] = DistrictUpdateForm()
+        else:
+            context['form'] = form
+
+        context['legislative_districts'] = LegislativeDistrict.objects.all()
+        return render(request, self.template_name, context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -217,18 +236,7 @@ class MapView(LoginRequiredMixin, TemplateView):
         context['legislative_districts'] = LegislativeDistrict.objects.all()
         return context
     
-class MapUpdateView(LoginRequiredMixin, UpdateView):
-    def get(self, request, *args, **kwargs):
-        form = DistrictUpdateForm()
-        print(form.fields + " fields")
-        return render(request, 'home.html', {'form': form})
-    
-    def post(self, request, *args, **kwargs):
-        district = request.POST.get('legis_dist')
-        form = DistrictUpdateForm(request.POST, instance=LegislativeDistrict.objects.get(legis_dist=district))
-        
-        if form.is_valid():
-            return HttpResponseRedirect('/')
+
 
         
 

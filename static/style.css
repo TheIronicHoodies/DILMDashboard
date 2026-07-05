@@ -8,7 +8,16 @@ body {
     background-color: white;
     height: 100vh;
     margin: 0;
+}
+
+footer {
+    background-color: indigo;
+    bottom: 0;
+    color: white;
+    height: 15vh;
+    margin-top: 1em;
     padding: 5vh;
+    width: 100%;
 }
 
 form button {
@@ -31,8 +40,30 @@ form div input {
     width: 25vh;
 }
 
+header {
+    background-color: indigo;
+    color: white;
+    padding: 5vh;
+}
+
+main {
+    padding: 5vh;
+}
+
+.checkbox-input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.logout {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
 .map {
-    border: 1px solid black;
     flex: 1;
 }
 
@@ -42,7 +73,6 @@ form div input {
 }
 
 .map-toggles {
-    border: 1px solid black;
     flex: 1;
 }
 
@@ -54,4 +84,8 @@ form div input {
     gap: 1em;
     height: 100%;
     justify-content: stretch;
+}
+
+#partners {
+    width: 100%;
 }
