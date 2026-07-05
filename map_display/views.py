@@ -21,9 +21,9 @@ class MapView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         district = request.POST.get('legis_dist')
         district_obj = LegislativeDistrict.objects.filter(legis_dist=district).first()
-        context = self.get_context_data()
 
         if district_obj is None:
+            context = self.get_context_data()
             context['form'] = DistrictUpdateForm(request.POST)
             return render(request, self.template_name, context)
 
@@ -31,67 +31,67 @@ class MapView(LoginRequiredMixin, TemplateView):
 
         if form.is_valid():
             form.save()
-            context['form'] = DistrictUpdateForm()
-        else:
-            context['form'] = form
 
+        context = self.get_context_data()
+        context['form'] = DistrictUpdateForm() if form.is_valid() else form
         context['legislative_districts'] = LegislativeDistrict.objects.all()
         return render(request, self.template_name, context)
 
+    def _compute_fill_style(self, feature, districts_by_name=None, blue=None, yellow=None, pink=None, stripes_blue=None, stripes_yellow=None, stripes_pink=None):
+        '''Computes the fill styles for each district based on the latest saved values.'''
+        default_style = {
+            "fillColor": '#000000',
+            "fillOpacity": 1.0,
+            "fillPattern": None,
+            "weight": 0.0
+        }
+        district_name = feature['properties']['legis_dist']
+        district = None
+
+        if districts_by_name is not None:
+            district = districts_by_name.get(district_name)
+        elif LegislativeDistrict.objects.filter(legis_dist=district_name).exists():
+            district = LegislativeDistrict.objects.get(legis_dist=district_name)
+
+        if district is None:
+            return default_style
+
+        collected_signatures = int(getattr(district, 'collected_signatures', 0) or 0)
+        difficulty = getattr(district, 'difficulty', 'Medium') or 'Medium'
+        partners = getattr(district, 'partners', None)
+        partner_mobilized = bool(getattr(district, 'partner_mobilized', False))
+        registered_voters = int(getattr(district, 'registered_voters', 0) or 0)
+        three_percent = math.ceil(registered_voters * 0.03)
+
+        if pandas.isna(partners) or str(partners).strip() == '':
+            return default_style
+
+        default_style['fillOpacity'] = min(1.0, max(0.0, collected_signatures / max(three_percent, 1)))
+        match difficulty:
+            case 'Easy':
+                default_style['fillColor'] = blue
+                if not partner_mobilized:
+                    default_style['fillPattern'] = stripes_blue
+            case 'Hard':
+                default_style['fillColor'] = pink
+                if not partner_mobilized:
+                    default_style['fillPattern'] = stripes_pink
+            case _:
+                default_style['fillColor'] = yellow
+                if not partner_mobilized:
+                    default_style['fillPattern'] = stripes_yellow
+
+        if default_style['fillOpacity'] == 1.0:
+            default_style['weight'] = 1.0
+        elif default_style['fillOpacity'] == 0.0:
+            default_style['weight'] = 0.0
+        else:
+            default_style['weight'] = 0.5
+
+        return default_style
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        def compute_fill_style(feature):
-            '''Computes the fill styles for each district based on the state of the data.'''
-            default_style = {
-                "fillColor": '#000000',
-                "fillOpacity": 1.0,
-                "fillPattern": None,
-                "weight": 0.0
-            }
-            district = feature['properties']['legis_dist']
-            district_row = csv_data[csv_data['legis_dist'] == district]
-
-            if district_row.empty:
-                print("No data for district:", district)
-                return default_style
-
-            collected_signatures = district_row['collected_signatures'].iloc[0]
-            collected_signatures = int(str(collected_signatures).replace(',', ''))
-
-            difficulty = district_row['difficulty'].iloc[0] if 'difficulty' in district_row.columns else 'Medium'
-            partners = district_row['partners'].iloc[0] if 'partners' in district_row.columns else None
-            partner_mobilized = district_row['partner_mobilized'].iloc[0] if 'partner_mobilized' in district_row.columns else None
-            registered_voters = district_row['registered_voters'].iloc[0]
-            registered_voters = int(str(registered_voters).replace(',', ''))
-            three_percent = math.ceil(registered_voters * 0.03)
-
-            if pandas.isna(partners) or str(partners).strip() == '':
-                return default_style
-
-            default_style['fillOpacity'] = min(1.0, max(0.0, collected_signatures / max(three_percent, 1)))
-            match difficulty:
-                case 'Easy':
-                    default_style['fillColor'] = blue
-                    if not partner_mobilized:
-                        default_style['fillPattern'] = stripes_blue
-                case 'Hard':
-                    default_style['fillColor'] = pink
-                    if not partner_mobilized:
-                        default_style['fillPattern'] = stripes_pink
-                case _:
-                    default_style['fillColor'] = yellow
-                    if not partner_mobilized:
-                        default_style['fillPattern'] = stripes_yellow
-
-            if default_style['fillOpacity'] == 1.0:
-                default_style['weight'] = 1.0
-            elif default_style['fillOpacity'] == 0.0:
-                default_style['weight'] = 0.0
-            else:
-                default_style['weight'] = 0.5
-            
-            return default_style
         
         def parse_geojson_to_db(geojson):
             '''Helper function to parse GeoJSON data and update Django's internal database.'''
@@ -134,6 +134,24 @@ class MapView(LoginRequiredMixin, TemplateView):
                         'registered_voters': 0
                     }
                 )
+        
+        def parse_db_to_geojson(geojson):
+            '''Helper function to parse Django's internal database and update the GeoJSON data.'''
+            for district in LegislativeDistrict.objects.all():
+                for feature in geojson['features']:
+                    if feature['properties']['legis_dist'] == district.legis_dist:
+                        feature['properties']['collected_signatures'] = district.collected_signatures
+                        feature['properties']['difficulty'] = district.difficulty
+                        feature['properties']['partners'] = district.partners
+                        feature['properties']['partner_mobilized'] = district.partner_mobilized
+                        feature['properties']['registered_voters'] = district.registered_voters
+
+            return geojson
+
+        def write_geojson_to_file(geojson, output_path):
+            '''Write the merged GeoJSON object to disk so the file is updated.'''
+            with open(output_path, 'w', encoding='utf-8') as file:
+                json.dump(geojson, file, ensure_ascii=False)
         
         COORDINATES = [12.8797, 121.7740] # Coordinates to the centre of the Philippines
         PH_BOUNDS = [[3,115],[25,135]]
@@ -217,12 +235,28 @@ class MapView(LoginRequiredMixin, TemplateView):
             """,
         )
 
+        geo_json_data = parse_db_to_geojson(json.loads(geo_json_data.to_json()))
+        write_geojson_to_file(geo_json_data, 'static/map_coordinates/legis_dists.geojson')
+
+        districts_by_name = {
+            district.legis_dist: district
+            for district in LegislativeDistrict.objects.all()
+        }
 
         folium.features.GeoJson(
             geo_json_data,
             popup=popup,
             style_function=lambda feature: {
-                **compute_fill_style(feature),
+                **self._compute_fill_style(
+                    feature,
+                    districts_by_name=districts_by_name,
+                    blue=blue,
+                    yellow=yellow,
+                    pink=pink,
+                    stripes_blue=stripes_blue,
+                    stripes_yellow=stripes_yellow,
+                    stripes_pink=stripes_pink,
+                ),
                 "weight": 0,
             },
             zoom_on_click=False,
