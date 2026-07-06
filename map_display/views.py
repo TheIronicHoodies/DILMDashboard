@@ -21,9 +21,9 @@ class MapView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         district = request.POST.get('legis_dist')
         district_obj = LegislativeDistrict.objects.filter(legis_dist=district).first()
+        context = self.get_context_data()
 
         if district_obj is None:
-            context = self.get_context_data()
             context['form'] = DistrictUpdateForm(request.POST)
             return render(request, self.template_name, context)
 
@@ -31,9 +31,10 @@ class MapView(LoginRequiredMixin, TemplateView):
 
         if form.is_valid():
             form.save()
+            context['form'] = DistrictUpdateForm()
+        else:
+            context['form'] = form
 
-        context = self.get_context_data()
-        context['form'] = DistrictUpdateForm() if form.is_valid() else form
         context['legislative_districts'] = LegislativeDistrict.objects.all()
         return render(request, self.template_name, context)
 
@@ -60,7 +61,7 @@ class MapView(LoginRequiredMixin, TemplateView):
         difficulty = getattr(district, 'difficulty', 'Medium') or 'Medium'
         partners = getattr(district, 'partners', None)
         partner_mobilized = bool(getattr(district, 'partner_mobilized', False))
-        registered_voters = int(getattr(district, 'registered_voters', 0) or 0)
+        registered_voters = int(feature['properties']['registered_voters'] or 0)
         three_percent = math.ceil(registered_voters * 0.03)
 
         if pandas.isna(partners) or str(partners).strip() == '':
@@ -141,10 +142,10 @@ class MapView(LoginRequiredMixin, TemplateView):
                 for feature in geojson['features']:
                     if feature['properties']['legis_dist'] == district.legis_dist:
                         feature['properties']['collected_signatures'] = district.collected_signatures
+                        feature['properties']['percentage_collected'] = f'{district.collected_signatures / feature["properties"]["registered_voters"] * 100:.2f}%'
                         feature['properties']['difficulty'] = district.difficulty
                         feature['properties']['partners'] = district.partners
                         feature['properties']['partner_mobilized'] = district.partner_mobilized
-                        feature['properties']['registered_voters'] = district.registered_voters
 
             return geojson
 
@@ -170,6 +171,7 @@ class MapView(LoginRequiredMixin, TemplateView):
             "legis_dist",
             "registered_voters",
             "collected_signatures",
+            "percentage_collected",
             "difficulty",
             "partners",
             "partner_mobilized",
@@ -216,13 +218,23 @@ class MapView(LoginRequiredMixin, TemplateView):
         pink = '#ff0088'
         yellow = '#ffcc00'
         blue = '#0099ff'
-        stripes_pink = StripePattern(angle=-45, color=pink, opacity=1.0).add_to(ph_map)
-        stripes_yellow = StripePattern(angle=-45, color=yellow, opacity=1.0).add_to(ph_map)
-        stripes_blue = StripePattern(angle=-45, color=blue, opacity=1.0).add_to(ph_map)
+        stripes_pink = StripePattern(angle=-45, color=pink).add_to(ph_map)
+        stripes_yellow = StripePattern(angle=-45, color=yellow).add_to(ph_map)
+        stripes_blue = StripePattern(angle=-45, color=blue).add_to(ph_map)
 
         popup = folium.GeoJsonPopup(
-            fields=['legis_dist', 'collected_signatures', 'difficulty', 'partners'],
-            aliases=['Legislative District:', 'Collected Signatures:', 'Difficulty:', 'Partners:'],
+            fields=['legis_dist', 
+                    'percentage_collected',
+                    'collected_signatures', 
+                    'registered_voters', 
+                    'difficulty', 
+                    'partners'],
+            aliases=['Legislative District:', 
+                     'Percent Collected:',
+                     'Collected Signatures:', 
+                     'Registered Voters:', 
+                     'Difficulty:', 
+                     'Partners:'],
             localize=True,
             labels=True,
             lazy=True,

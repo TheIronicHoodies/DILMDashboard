@@ -80,8 +80,9 @@ class MapUpdateTests(TestCase):
     def test_compute_fill_style_uses_saved_district_values(self):
         self.district.collected_signatures = 77
         self.district.difficulty = 'Hard'
+        self.district.registered_voters = 1000
         self.district.partners = 'Partner C'
-        self.district.partner_mobilized = True
+        self.district.partner_mobilized = False
         self.district.save()
 
         view = MapView()
@@ -102,10 +103,10 @@ class MapUpdateTests(TestCase):
             blue='#0099ff',
             yellow='#ffcc00',
             pink='#ff0088',
-            stripes_blue=None,
-            stripes_yellow=None,
-            stripes_pink=None,
+            pattern_factory=lambda color, opacity: type('PatternStub', (), {'opacity': opacity, 'color': color})(),
         )
 
         self.assertEqual(style['fillColor'], '#ff0088')
         self.assertEqual(style['fillOpacity'], 1.0)
+        self.assertIsNotNone(style['fillPattern'])
+        self.assertEqual(style['fillPattern'].opacity, 1.0)
