@@ -76,7 +76,14 @@ main {
     flex: 1;
 }
 
-#home-page {
+#global-progress {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 1em;
+}
+
+#map-container {
     align-items: stretch;
     display: flex;
     flex-basis: auto;

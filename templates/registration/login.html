@@ -3,9 +3,8 @@
 
 {% block title %}Login{% endblock %}
 
-{% block header %}Login{% endblock %}
-
 {% block content %}
+<main>
     <div class="login-card">
         {% if form.errors %}
             <div class="error-box">
@@ -13,7 +12,7 @@
             </div>
         {% endif %}
 
-        <form method="post">
+        <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" value="submit" class="login-btn">Login</button>
@@ -22,4 +21,5 @@
             </a>
         </form>
     </div>
+</main>
 {% endblock %}

@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 import folium
 
@@ -5,7 +6,7 @@ import folium
 
 class LegislativeDistrict(models.Model):
     legis_dist = models.CharField(max_length=99, unique=True, primary_key=True)
-    collected_signatures = models.IntegerField()
+    collected_signatures = models.IntegerField(validators=[MinValueValidator(0)])
     difficulty = models.CharField(max_length=6, choices=[
         ('Easy', 'Easy'),
         ('Medium', 'Medium'),
@@ -13,7 +14,7 @@ class LegislativeDistrict(models.Model):
     ])
     partners = models.CharField(max_length=100, blank=True, null=True)
     partner_mobilized = models.BooleanField(default=False)
-    registered_voters = models.IntegerField()
+    registered_voters = models.IntegerField(validators=[MinValueValidator(0)])
 
     class Meta:
         verbose_name = "legislative_district"

@@ -1,18 +1,15 @@
-from branca.colormap import linear
+import folium
+import geopandas
+import json
+import math
+import pandas
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Sum
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from folium.plugins import StripePattern
 from .forms import DistrictUpdateForm
 from .models import LegislativeDistrict
-import folium
-import geopandas
-import json
-import math
-import os
-import pandas
-import requests
-import struct
 
 # Create your views here.
 class MapView(LoginRequiredMixin, TemplateView):
@@ -21,20 +18,28 @@ class MapView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         district = request.POST.get('legis_dist')
         district_obj = LegislativeDistrict.objects.filter(legis_dist=district).first()
-        context = self.get_context_data()
 
         if district_obj is None:
+            context = self.get_context_data()
             context['form'] = DistrictUpdateForm(request.POST)
             return render(request, self.template_name, context)
 
+        original_signatures = district_obj.collected_signatures
         form = DistrictUpdateForm(request.POST, instance=district_obj)
 
         if form.is_valid():
-            form.save()
-            context['form'] = DistrictUpdateForm()
-        else:
-            context['form'] = form
+            updated_signatures = request.POST.get('collected_signatures')
+            district_instance = form.save(commit=False)
 
+            if updated_signatures is not None and updated_signatures != '':
+                district_instance.collected_signatures = original_signatures + int(updated_signatures)
+            else:
+                district_instance.collected_signatures = original_signatures
+
+            district_instance.save()
+
+        context = self.get_context_data()
+        context['form'] = DistrictUpdateForm() if form.is_valid() else form
         context['legislative_districts'] = LegislativeDistrict.objects.all()
         return render(request, self.template_name, context)
 
@@ -113,14 +118,13 @@ class MapView(LoginRequiredMixin, TemplateView):
                         'legis_dist': legis_dist,
                         'collected_signatures': collected_signatures,
                         'difficulty': difficulty,
-                        'partners': [partners] if partners else [],
+                        'partners': partners,
                         'partner_mobilized': partner_mobilized,
                         'registered_voters': registered_voters
                     })
 
             for district in districts:
                 LegislativeDistrict.objects.update_or_create(
-                    #TODO: Look into update_or_create documentation
                     legis_dist=district['legis_dist'],
                     collected_signatures=district['collected_signatures'],
                     difficulty=district['difficulty'],
@@ -130,7 +134,7 @@ class MapView(LoginRequiredMixin, TemplateView):
                     defaults={
                         'collected_signatures': 0,
                         'difficulty': 'Medium',
-                        'partners': [],
+                        'partners': '',
                         'partner_mobilized': False,
                         'registered_voters': 0
                     }
@@ -277,9 +281,18 @@ class MapView(LoginRequiredMixin, TemplateView):
         ph_map.add_to(figure)
         figure.render()
 
+        # global stats
+        aggregate = LegislativeDistrict.objects.aggregate(
+            total_collected_signatures=Sum('collected_signatures'),
+            total_registered_voters=Sum('registered_voters'),
+        )
+
         context['map'] = figure
         context['form'] = DistrictUpdateForm()
         context['legislative_districts'] = LegislativeDistrict.objects.all()
+        context['total_collected_signatures'] = aggregate['total_collected_signatures'] 
+        context['total_registered_voters'] = aggregate['total_registered_voters']
+        context['total_percentage'] = aggregate['total_collected_signatures'] / aggregate['total_registered_voters'] * 100
         return context
     
 

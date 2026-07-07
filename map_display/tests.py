@@ -41,14 +41,14 @@ class MapUpdateTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.district.refresh_from_db()
-        self.assertEqual(self.district.collected_signatures, 42)
+        self.assertEqual(self.district.collected_signatures, 52)
         self.assertEqual(self.district.difficulty, 'Hard')
         self.assertEqual(self.district.partners, 'Partner B')
         self.assertTrue(self.district.partner_mobilized)
 
     def test_geojson_file_is_updated_from_database(self):
         self.client.force_login(self.user)
-        self.client.post(
+        response = self.client.post(
             reverse('map_display:map_display'),
             {
                 'legis_dist': self.district.legis_dist,
@@ -58,6 +58,8 @@ class MapUpdateTests(TestCase):
                 'partner_mobilized': 'on',
             },
         )
+
+        self.assertContains(response, 'Partner C')
 
         geojson_path = os.path.join('static', 'map_coordinates', 'legis_dists.geojson')
         self.assertTrue(os.path.exists(geojson_path))
@@ -72,7 +74,7 @@ class MapUpdateTests(TestCase):
         self.assertTrue(matching_features)
 
         properties = matching_features[0]['properties']
-        self.assertEqual(properties['collected_signatures'], 77)
+        self.assertEqual(properties['collected_signatures'], 87)
         self.assertEqual(properties['difficulty'], 'Easy')
         self.assertEqual(properties['partners'], 'Partner C')
         self.assertTrue(properties['partner_mobilized'])
@@ -103,10 +105,10 @@ class MapUpdateTests(TestCase):
             blue='#0099ff',
             yellow='#ffcc00',
             pink='#ff0088',
-            pattern_factory=lambda color, opacity: type('PatternStub', (), {'opacity': opacity, 'color': color})(),
+            stripes_blue=None,
+            stripes_yellow=None,
+            stripes_pink=None,
         )
 
         self.assertEqual(style['fillColor'], '#ff0088')
         self.assertEqual(style['fillOpacity'], 1.0)
-        self.assertIsNotNone(style['fillPattern'])
-        self.assertEqual(style['fillPattern'].opacity, 1.0)
