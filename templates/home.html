@@ -7,10 +7,21 @@
 {% block content %}
 <main id="home-page">
     {% if user.is_authenticated %}
-    <div id="global-progress">
-        <span id="global-signatures">Total Signatures Collected: {{ total_collected_signatures }}</span>
-        <span id="global-registered-voters">Total Registered Voters: {{ total_registered_voters }}</span>
-        <span id="global-percentage">Total Percentage Collected: {{ total_percentage|floatformat:2 }}%</span>
+    <div id="global-stats">
+        <div id="global-progress">
+            <span id="global-signatures">Total Signatures Collected: {{ total_collected_signatures }}</span>
+            <span id="global-registered-voters">Total Registered Voters: {{ total_registered_voters }}</span>
+            <span id="global-percentage">Total Percentage Collected: {{ total_percentage|floatformat:2 }}%</span>
+        </div>
+        <div id="map-legend">
+            <h3>Legend</h3>
+            <ul>
+                <li><span class="legend-color"></span>Districts colored in magenta have <b>easy</b> reachability.</li>
+                <li><span class="legend-color"></span> Districts colored in yellow have <b>medium</b> reachability.</li>
+                <li><span class="legend-color"></span> Districts colored in red have <b>hard</b> reachability.</li>
+                <li>Stripes indicate that at least one partner is present, but they have not mobilized.</li>
+            </ul>
+        </div>
     </div>
     <div id="map-container">
         <div class="map-toggles">
