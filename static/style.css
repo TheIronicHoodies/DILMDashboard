@@ -60,6 +60,13 @@ main {
     align-items: center;
 }
 
+.legend-color {
+    display: inline-block;
+    height: 1em;
+    margin-right: 0.5em;
+    width: 1em;
+}
+
 .logout {
     background-color: transparent;
     border: none;
@@ -115,4 +122,19 @@ main {
 
 #partners {
     width: 100%;
+}
+
+.bold {
+    font-size: 1.2em;
+    font-weight: bold !important;
+}
+
+#magenta {
+    background-color: #ff0088 !important;
+}
+#yellow {
+    background-color: #ffcc00 !important;
+}
+#blue {
+    background-color: #0099ff !important;
 }

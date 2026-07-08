@@ -6,7 +6,7 @@ import folium
 
 class LegislativeDistrict(models.Model):
     legis_dist = models.CharField(max_length=99, unique=True, primary_key=True)
-    collected_signatures = models.IntegerField(validators=[MinValueValidator(0)])
+    collected_signatures = models.IntegerField()
     difficulty = models.CharField(max_length=6, choices=[
         ('Easy', 'Easy'),
         ('Medium', 'Medium'),

@@ -31,8 +31,11 @@ class MapView(LoginRequiredMixin, TemplateView):
             updated_signatures = request.POST.get('collected_signatures')
             district_instance = form.save(commit=False)
 
-            if updated_signatures is not None and updated_signatures != '':
-                district_instance.collected_signatures = original_signatures + int(updated_signatures)
+            updated_signatures_valid = updated_signatures is not None and updated_signatures != ''
+            aggregate_signatures = original_signatures + int(updated_signatures)
+
+            if updated_signatures_valid and aggregate_signatures >= 0:
+                district_instance.collected_signatures = aggregate_signatures
             else:
                 district_instance.collected_signatures = original_signatures
 
