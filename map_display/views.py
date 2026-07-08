@@ -90,13 +90,6 @@ class MapView(LoginRequiredMixin, TemplateView):
                 if not partner_mobilized:
                     default_style['fillPattern'] = stripes_yellow
 
-        if default_style['fillOpacity'] == 1.0:
-            default_style['weight'] = 1.0
-        elif default_style['fillOpacity'] == 0.0:
-            default_style['weight'] = 0.0
-        else:
-            default_style['weight'] = 0.5
-
         return default_style
 
     def get_context_data(self, **kwargs):
