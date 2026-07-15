@@ -38,7 +38,7 @@
                         </select>
                     </div>
                     <div>
-                        <label for="collected_signatures">Add collected signatures:</label>
+                        <label for="collected_signatures">Collected signatures:</label>
                         <input type="number" id="collected_signatures" name="collected_signatures" value="{{collected_signatures}}">
                     </div>
                     <div>
@@ -75,6 +75,7 @@
         {{map.script.render|safe}}
 
         var district_selection = document.getElementById('legis_dist');
+        var collected_signatures_input = document.getElementById('collected_signatures');
         var difficulty_selection = document.getElementById('difficulty');
         var partners_input = document.getElementById('partners');
         var partner_mobilized_checkbox = document.getElementById('partner_mobilized');
@@ -82,8 +83,12 @@
         district_selection.addEventListener('change', function() {
             {% for district in legislative_districts %}
             if (this.value === "{{ district.legis_dist }}") {
+                collected_signatures_input.value = '{{ district.collected_signatures }}';
                 difficulty_selection.value = '{{ district.difficulty }}';
                 partners_input.value = '{{ district.partners }}';
+                if (partners_input.value == 'None') {
+                    partners_input.value = '';
+                }
                 partner_mobilized_checkbox.checked = {{ district.partner_mobilized|yesno:"true,false" }};
             }
             {% endfor %}

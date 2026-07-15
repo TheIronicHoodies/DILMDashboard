@@ -28,14 +28,13 @@ class MapView(LoginRequiredMixin, TemplateView):
         form = DistrictUpdateForm(request.POST, instance=district_obj)
 
         if form.is_valid():
-            updated_signatures = request.POST.get('collected_signatures')
+            updated_signatures = int(request.POST.get('collected_signatures'))
             district_instance = form.save(commit=False)
 
             updated_signatures_valid = updated_signatures is not None and updated_signatures != ''
-            aggregate_signatures = original_signatures + int(updated_signatures)
 
-            if updated_signatures_valid and aggregate_signatures >= 0:
-                district_instance.collected_signatures = aggregate_signatures
+            if updated_signatures_valid and updated_signatures >= 0:
+                district_instance.collected_signatures = int(updated_signatures)
             else:
                 district_instance.collected_signatures = original_signatures
 
@@ -70,12 +69,12 @@ class MapView(LoginRequiredMixin, TemplateView):
         partners = getattr(district, 'partners', None)
         partner_mobilized = bool(getattr(district, 'partner_mobilized', False))
         registered_voters = int(feature['properties']['registered_voters'] or 0)
-        three_percent = math.ceil(registered_voters * 0.03)
+        five_percent = math.ceil(registered_voters * 0.05)
 
         if pandas.isna(partners) or str(partners).strip() == '':
             return default_style
 
-        default_style['fillOpacity'] = min(1.0, max(0.0, collected_signatures / max(three_percent, 1)))
+        default_style['fillOpacity'] = min(1.0, max(0.0, collected_signatures / max(five_percent, 1)))
         match difficulty:
             case 'Easy':
                 default_style['fillColor'] = blue
@@ -122,17 +121,12 @@ class MapView(LoginRequiredMixin, TemplateView):
             for district in districts:
                 LegislativeDistrict.objects.update_or_create(
                     legis_dist=district['legis_dist'],
-                    collected_signatures=district['collected_signatures'],
-                    difficulty=district['difficulty'],
-                    partners=district['partners'],
-                    partner_mobilized=district['partner_mobilized'],
-                    registered_voters=district['registered_voters'],
                     defaults={
-                        'collected_signatures': 0,
-                        'difficulty': 'Medium',
-                        'partners': '',
-                        'partner_mobilized': False,
-                        'registered_voters': 0
+                        'collected_signatures': district['collected_signatures'],
+                        'difficulty': district['difficulty'],
+                        'partners': district['partners'],
+                        'partner_mobilized': district['partner_mobilized'],
+                        'registered_voters': district['registered_voters'],
                     }
                 )
         
@@ -186,6 +180,10 @@ class MapView(LoginRequiredMixin, TemplateView):
         # overwrite existing data if it already exists
         if not LegislativeDistrict.objects.exists():
             print("Database not yet populated")
+            parse_geojson_to_db(json.loads(geo_json_data.to_json()))
+
+        if any(district.registered_voters in (None, 0) for district in LegislativeDistrict.objects.all()):
+            print("Some districts have missing or zero registered voters. Updating from GeoJSON data.")
             parse_geojson_to_db(json.loads(geo_json_data.to_json()))
 
         figure = folium.Figure(width="100%", height="100%") # width and height of the figure that will contain the map
